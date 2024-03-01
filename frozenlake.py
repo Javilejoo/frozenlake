@@ -56,10 +56,13 @@ def run(episodes, is_training=True, render=False):
 
         rewards_per_episode[i] = total_reward  # Guardar la recompensa total del episodio
         
+        # Imprimir algo por cada episodio
+        print(f"Episodio {i+1}: Recompensa total: {total_reward}")
+        
         # Imprimir el progreso del entrenamiento
         if (i+1) % (episodes // 10) == 0:
             percentage = ((i+1) / episodes) * 100
-            print(f"Episodio {i+1}/{episodes}: Recompensa media de los últimos 100 episodios: {np.mean(rewards_per_episode[max(0, i-100):i+1]):.2f} - Progreso: {percentage:.2f}%")
+            print(f"   Progreso: {percentage:.2f}%")
 
     print("Entrenamiento completado.")
     env.close()
