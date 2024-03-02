@@ -8,11 +8,16 @@ import matplotlib.pyplot as plt
 import pickle
 
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
-def run(episodes, render= False):
+def run(episodes, is_training =True,render= False):
     env = gym.make('FrozenLake-v1', desc=generate_random_map(size=4), is_slippery=True, render_mode='human' if render else None)
     
-    q = np.zeros((env.observation_space.n, env.action_space.n)) # Inicializar un arreglo de 16 x 4
-    
+    if (is_training):
+        q = np.zeros((env.observation_space.n, env.action_space.n)) # Inicializar un arreglo de 16 x 4
+    else:
+        f = open('frozen_lake_model.pkl', 'rb')
+        q = pickle.load(f)
+        f.close()
+
     #Qlearning formula depende de 2 hyperparametros
     learning_rate_a = 0.9 # Tasa de aprendizaje (alpha)
     discount_factor_g = 0.9 # Factor de descuento (gamma)
@@ -29,16 +34,17 @@ def run(episodes, render= False):
         truncated = False       # True when actions > 200
 
         while(not terminated and not truncated):
-            if rng.random() < epsilon:
+            if is_training and rng.random() < epsilon:
                 action = env.action_space.sample()
             else:
                 action = np.argmax(q[state,:])
 
             new_state, reward, terminated, truncated, _ = env.step(action)
 
-            q[state,action] = q[state,action] + learning_rate_a * (
-                reward + discount_factor_g * np.max(q[new_state,:]) - q[state,action]
-            )
+            if is_training:
+                q[state,action] = q[state,action] + learning_rate_a * (
+                    reward + discount_factor_g * np.max(q[new_state,:]) - q[state,action]
+                )
             
             state = new_state
 
@@ -58,10 +64,11 @@ def run(episodes, render= False):
     plt.plot(sum_rewards)
     plt.savefig('frozen_lake_rewards.png')
 
-    #uso de pickle para guardar el modelo
-    f = open('frozen_lake_model.pkl', 'wb')
-    pickle.dump(q, f)
-    f.close()
+    if is_training:
+        #uso de pickle para guardar el modelo
+        f = open('frozen_lake_model.pkl', 'wb')
+        pickle.dump(q, f)
+        f.close()
 
 if __name__=="__main__":
-    run(15000)
+    run(1000, is_training=True)
