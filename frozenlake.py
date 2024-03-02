@@ -1,3 +1,6 @@
+# Javier Prado - 21486
+# Gabriel García - 21352
+# Bryan España - 21550
 import gymnasium as gym
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 import numpy as np
@@ -5,8 +8,8 @@ import matplotlib.pyplot as plt
 import pickle
 
 def run(episodes, is_training=True, render=False):
-
-    env = gym.make('FrozenLake-v1', map_name="4x4", desc = generate_random_map(size = 4), is_slippery=True, render_mode='human' if render else None)
+    # Con esto se crea el mapa de Frozen Lake, especificamos que sea 4x4 y que el mapa se genere de forma aleatoria a la hora de generarlo
+    env = gym.make('FrozenLake-v1', desc = generate_random_map(size = 4), is_slippery=True, render_mode='human' if render else None)
 
     if(is_training):
         q = np.zeros((env.observation_space.n, env.action_space.n)) # Inicializar un arreglo de 16 x 4
