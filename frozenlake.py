@@ -1,4 +1,8 @@
+# Javier Prado - 21486
+# Gabriel García - 21352
+# Bryan España - 21550
 import gymnasium as gym
+from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
