@@ -3,80 +3,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-def run(episodes, is_training=True, render=False):
-
-    env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=True, render_mode='human' if render else None)
-
-    if(is_training):
-        q = np.zeros((env.observation_space.n, env.action_space.n)) # Inicializar un arreglo de 16 x 4
-    else:
-        with open('frozen_lake4x4.pkl', 'rb') as f:
-            q = pickle.load(f)
-
+from gymnasium.envs.toy_text.frozen_lake import generate_random_map
+def run(episodes, render= False):
+    env = gym.make('FrozenLake-v1', desc=generate_random_map(size=4), is_slippery=True, render_mode='human' if render else None)
+    
+    q = np.zeros((env.observation_space.n, env.action_space.n)) # Inicializar un arreglo de 16 x 4
+    
+    #Qlearning formula depende de 2 hyperparametros
     learning_rate_a = 0.9 # Tasa de aprendizaje (alpha)
     discount_factor_g = 0.9 # Factor de descuento (gamma)
+
+    rewards_per_episode = np.zeros(episodes)  # Para rastrear la recompensa total en cada episodio
+
     epsilon = 1         # 1 = 100% de acciones aleatorias
     epsilon_decay_rate = 0.0001        # Tasa de decaimiento de epsilon
     rng = np.random.default_rng()   # Generador de números aleatorios
 
-    rewards_per_episode = np.zeros(episodes)
-    
-    print("Entrenamiento en progreso...")
     for i in range(episodes):
-        state = env.reset()[0]  # Obtener el estado inicial del entorno
-        terminated = False      # True cuando cae en un agujero o alcanza la meta
-        truncated = False       # True cuando acciones > 200
-        
-        total_reward = 0  # Para rastrear la recompensa total en cada episodio
+        state = env.reset()[0] # estado: 0 to 15 , 0 = top-left, 15 = bottom-right
+        terminated = False     # True when it falls in a hole or reaches the goal
+        truncated = False       # True when actions > 200
 
         while(not terminated and not truncated):
-            if is_training and rng.random() < epsilon:
-                action = env.action_space.sample() # Acciones: 0=izquierda, 1=abajo, 2=derecha, 3=arriba
+            if rng.random() < epsilon:
+                action = env.action_space.sample()
             else:
                 action = np.argmax(q[state,:])
 
             new_state, reward, terminated, truncated, _ = env.step(action)
 
-            total_reward += reward  # Acumular la recompensa total
+            q[state,action] = q[state,action] + learning_rate_a * (
+                reward + discount_factor_g * np.max(q[new_state,:]) - q[state,action]
+            )
             
-            if is_training:
-                q[state,action] = q[state,action] + learning_rate_a * (
-                    reward + discount_factor_g * np.max(q[new_state,:]) - q[state,action]
-                )
-
             state = new_state
 
-            if render:
-                env.render()
-                
         epsilon = max(epsilon - epsilon_decay_rate, 0)
 
         if(epsilon==0):
             learning_rate_a = 0.0001
 
-        rewards_per_episode[i] = total_reward  # Guardar la recompensa total del episodio
-        
-        # Imprimir algo por cada episodio
-        print(f"Episodio {i+1}: Recompensa total: {total_reward}")
-        
-        # Imprimir el progreso del entrenamiento
-        if (i+1) % (episodes // 10) == 0:
-            percentage = ((i+1) / episodes) * 100
-            print(f"   Progreso: {percentage:.2f}%")
+        if reward == 1:
+            rewards_per_episode[i] = 1
 
-    print("Entrenamiento completado.")
     env.close()
 
-    # Graficar la recompensa total acumulada por episodio
-    plt.plot(rewards_per_episode)
-    plt.xlabel('Episodio')
-    plt.ylabel('Recompensa total')
-    plt.title('Recompensa total acumulada por episodio')
-    plt.savefig('frozen_lake4x4_rewards.png')
+    sum_rewards = np.zeros(episodes)
+    for t in range(episodes):
+        sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
+    plt.plot(sum_rewards)
+    plt.savefig('frozen_lake_rewards.png')
 
-    if is_training:
-        with open("frozen_lake4x4.pkl","wb") as f:
-            pickle.dump(q, f)
+    #uso de pickle para guardar el modelo
+    f = open('frozen_lake_model.pkl', 'wb')
+    pickle.dump(q, f)
+    f.close()
 
-if __name__ == '__main__':
-    run(1000, is_training=True, render=True)
+if __name__=="__main__":
+    run(15000)
