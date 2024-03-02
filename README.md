@@ -9,3 +9,7 @@ Para ejecutar este programa, necesitarás instalar la librería de Python "gymna
 
 ```bash
 pip install gymnasium
+
+## Video
+https://drive.google.com/file/d/1diZSen6sPF_LzZcaHIs9dtG1wlQkP5TT/view?usp=sharing
+
